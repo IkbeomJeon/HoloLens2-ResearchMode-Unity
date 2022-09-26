@@ -50,7 +50,11 @@ def tcp_server():
             header = data[0:1].decode('utf-8')
             print('--------------------------\nHeader: ' + header)
             print(len(data))
-
+            
+            if header == 't':
+                timestamp = str(int(time.time()))
+                print('Test call. ' + timestamp)
+            
             if header == 's':
                 # save depth sensor images
                 data_length = struct.unpack(">i", data[1:5])[0]

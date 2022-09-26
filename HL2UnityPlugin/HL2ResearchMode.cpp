@@ -1372,10 +1372,9 @@ namespace winrt::HL2UnityPlugin::implementation
     {
         m_depthOffset = offset;
     }
-
     long long HL2ResearchMode::checkAndConvertUnsigned(UINT64 val)
     {
-        assert(val <= kMaxLongLong);
+        //assert(val <= kMaxLongLong);
         return static_cast<long long>(val);
     }
 
