@@ -6,12 +6,14 @@ using System.Runtime.InteropServices;
 
 #if ENABLE_WINMD_SUPPORT
 using HL2UnityPlugin;
+using HoloLens2Stream;
 #endif
 
 public class ResearchModeVideoStream : MonoBehaviour
 {
 #if ENABLE_WINMD_SUPPORT
     HL2ResearchMode researchMode;
+    HoloLens2Stream.Class hl2Stream;
 #endif
 
     enum DepthSensorMode
@@ -24,6 +26,10 @@ public class ResearchModeVideoStream : MonoBehaviour
     [SerializeField] bool enablePointCloud = true;
 
     TCPClient tcpClient;
+    public GameObject pvImagePreviewPlane = null;
+    private Material pvImageMediaMaterial = null;
+    private Texture2D pvImageMediaTexture = null;
+    private byte[] pvImageFrameData = null;
 
     public GameObject depthPreviewPlane = null;
     private Material depthMediaMaterial = null;
@@ -79,6 +85,10 @@ public class ResearchModeVideoStream : MonoBehaviour
     }
     void Start()
     {
+        pvImageMediaMaterial = pvImagePreviewPlane.GetComponent<MeshRenderer>().material;
+        pvImageMediaTexture = new Texture2D(760, 428, TextureFormat.BGRA32, false);
+        pvImageMediaMaterial.mainTexture = pvImageMediaTexture;
+
         if (depthSensorMode == DepthSensorMode.ShortThrow)
         {
             if (depthPreviewPlane != null)
@@ -97,7 +107,7 @@ public class ResearchModeVideoStream : MonoBehaviour
             longDepthPreviewPlane.SetActive(false);
             longAbImagePreviewPlane.SetActive(false);
         }
-        
+
         if (depthSensorMode == DepthSensorMode.LongThrow)
         {
             if (longDepthPreviewPlane != null)
@@ -116,7 +126,7 @@ public class ResearchModeVideoStream : MonoBehaviour
             depthPreviewPlane.SetActive(false);
             shortAbImagePreviewPlane.SetActive(false);
         }
-        
+
 
         if (LFPreviewPlane != null)
         {
@@ -141,6 +151,7 @@ public class ResearchModeVideoStream : MonoBehaviour
 
 #if ENABLE_WINMD_SUPPORT
         researchMode = new HL2ResearchMode();
+        hl2Stream = new HoloLens2Stream.Class();
 
         // Depth sensor should be initialized in only one mode
         if (depthSensorMode == DepthSensorMode.LongThrow) researchMode.InitializeLongDepthSensor();
@@ -155,13 +166,51 @@ public class ResearchModeVideoStream : MonoBehaviour
         else if (depthSensorMode == DepthSensorMode.ShortThrow) researchMode.StartDepthSensorLoop(enablePointCloud);
 
         researchMode.StartSpatialCamerasFrontLoop();
+
+         _ = hl2Stream.InitializePVCamera();
+
+         
 #endif
+
+        text.text = "Init OK.";
     }
 
     bool startRealtimePreview = true;
     void LateUpdate()
     {
+
 #if ENABLE_WINMD_SUPPORT
+        //if (depthSensorMode == DepthSensorMode.ShortThrow && startRealtimePreview &&
+        //    depthPreviewPlane != null && researchMode.DepthMapTextureUpdated())
+        {
+            byte[] frameTexture = hl2Stream.GetPVCameraBuffer();
+
+            if (frameTexture.Length > 0)
+            {
+                if (pvImageFrameData == null)
+                {
+                    pvImageFrameData = frameTexture;
+                    //text.text = text.text+"1";
+                }
+                else
+                {
+                    System.Buffer.BlockCopy(frameTexture, 0, pvImageFrameData, 0, pvImageFrameData.Length);
+                    //text.text = text.text+"2";
+                }
+                //text.text = "frameTexture :" + frameTexture.Length.ToString();
+                text.text = "pvImageFrameData :" + pvImageFrameData.Length.ToString();
+                text.text = text.text + "\n " + string.Format("{0},{1},{2},{3}", pvImageFrameData[0], pvImageFrameData[1], pvImageFrameData[2], pvImageFrameData[3]);
+
+
+                pvImageMediaTexture.LoadRawTextureData(pvImageFrameData);
+                pvImageMediaTexture.Apply();
+                text.text = text.text+ "\n OK.";
+            }
+        }
+        
+
+
+        
         // update depth map texture
         if (depthSensorMode == DepthSensorMode.ShortThrow && startRealtimePreview && 
             depthPreviewPlane != null && researchMode.DepthMapTextureUpdated())
@@ -312,7 +361,7 @@ public class ResearchModeVideoStream : MonoBehaviour
                 {
                     pointCloudVector3[i] = new Vector3(pointCloud[3 * i], pointCloud[3 * i + 1], pointCloud[3 * i + 2]);
                 }
-                text.text = "Point Cloud Length: " + pointCloudVector3.Length.ToString();
+                //text.text = "Point Cloud Length: " + pointCloudVector3.Length.ToString();
                 pointCloudRenderer.Render(pointCloudVector3, pointColor);
             }
         }
@@ -342,8 +391,10 @@ public class ResearchModeVideoStream : MonoBehaviour
 
     public void StopSensorsEvent()
     {
+
 #if ENABLE_WINMD_SUPPORT
         researchMode.StopAllSensorDevice();
+        _ = hl2Stream.StopPVCamera();
 #endif
         startRealtimePreview = false;
     }
