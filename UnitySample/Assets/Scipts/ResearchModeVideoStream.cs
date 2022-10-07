@@ -5,15 +5,18 @@ using System;
 using System.Runtime.InteropServices;
 
 #if ENABLE_WINMD_SUPPORT
-using HL2UnityPlugin;
+//using HL2UnityPlugin;
 using HoloLens2Stream;
 #endif
 
 public class ResearchModeVideoStream : MonoBehaviour
 {
 #if ENABLE_WINMD_SUPPORT
-    HL2ResearchMode researchMode;
-    HoloLens2Stream.Class hl2Stream;
+    //ResearchModeStream researchMode;
+    //HoloLens2Stream.Class dfStream;
+    DefaultStream dfStream;
+    ResearchModeStream researchMode;
+
 #endif
 
     enum DepthSensorMode
@@ -150,8 +153,8 @@ public class ResearchModeVideoStream : MonoBehaviour
         tcpClient = GetComponent<TCPClient>();
 
 #if ENABLE_WINMD_SUPPORT
-        researchMode = new HL2ResearchMode();
-        hl2Stream = new HoloLens2Stream.Class();
+        dfStream = new DefaultStream();
+        researchMode = new ResearchModeStream();
 
         // Depth sensor should be initialized in only one mode
         if (depthSensorMode == DepthSensorMode.LongThrow) researchMode.InitializeLongDepthSensor();
@@ -167,7 +170,7 @@ public class ResearchModeVideoStream : MonoBehaviour
 
         researchMode.StartSpatialCamerasFrontLoop();
 
-         _ = hl2Stream.InitializePVCamera();
+         _ = dfStream.InitializePVCamera();
 
          
 #endif
@@ -183,7 +186,7 @@ public class ResearchModeVideoStream : MonoBehaviour
         //if (depthSensorMode == DepthSensorMode.ShortThrow && startRealtimePreview &&
         //    depthPreviewPlane != null && researchMode.DepthMapTextureUpdated())
         {
-            byte[] frameTexture = hl2Stream.GetPVCameraBuffer();
+            byte[] frameTexture = dfStream.GetPVCameraBuffer();
 
             if (frameTexture.Length > 0)
             {
@@ -394,7 +397,7 @@ public class ResearchModeVideoStream : MonoBehaviour
 
 #if ENABLE_WINMD_SUPPORT
         researchMode.StopAllSensorDevice();
-        _ = hl2Stream.StopPVCamera();
+        _ = dfStream.StopPVCamera();
 #endif
         startRealtimePreview = false;
     }

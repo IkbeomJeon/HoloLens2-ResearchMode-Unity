@@ -6,13 +6,13 @@ using System;
 using System.Runtime.InteropServices;
 
 #if ENABLE_WINMD_SUPPORT
-using HL2UnityPlugin;
+using HoloLens2Stream;
 #endif
 
 public class ResearchModeImuStream : MonoBehaviour
 {
 #if ENABLE_WINMD_SUPPORT
-    HL2ResearchMode researchMode;
+    ResearchModeStream researchMode;
 #endif
     private float[] accelSampleData = null;
     private Vector3 accelVector;
@@ -31,7 +31,7 @@ public class ResearchModeImuStream : MonoBehaviour
     void Start()
     {
 #if ENABLE_WINMD_SUPPORT
-        researchMode = new HL2ResearchMode();
+        researchMode = new ResearchModeStream();
         researchMode.InitializeAccelSensor();
         researchMode.InitializeGyroSensor();
         researchMode.InitializeMagSensor();
